@@ -145,6 +145,23 @@ public final class HildrModelInitialiser {
             HildrDelimiterProfile delimiterProfile
     ) {
         String presentationClass = delimiterProfile.getPresentationClass();
+        String segmentRecognitionCode = safe(segmentNode.getRecognitionCode());
+
+        if (!segmentRecognitionCode.isEmpty()) {
+            if ("csv".equals(presentationClass)) {
+                String tagSeparator = safe(delimiterProfile.getTagSeparator());
+                String compositeSeparator = safe(delimiterProfile.getCompositeSeparator());
+                String separator = !tagSeparator.isEmpty() ? tagSeparator : compositeSeparator;
+                if (!separator.isEmpty()) {
+                    return Pattern.quote(segmentRecognitionCode) + "[" + Pattern.quote(separator) + "]";
+                }
+                return Pattern.quote(segmentRecognitionCode);
+            }
+
+            if ("ffv".equals(presentationClass)) {
+                return Pattern.quote(segmentRecognitionCode);
+            }
+        }
 
         if ("ffv".equals(presentationClass)) {
             StringBuilder sb = new StringBuilder();

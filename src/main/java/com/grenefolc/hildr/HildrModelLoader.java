@@ -2,7 +2,6 @@ package com.grenefolc.hildr;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -10,6 +9,11 @@ import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
 public final class HildrModelLoader {
+
+    private static final HildrModelReader[] READERS = new HildrModelReader[] {
+            new HildrBoomiEdiProfileModelReader(),
+            new HildrJeraSeidrModelReader()
+    };
 
     private HildrModelLoader() {
     }
@@ -39,47 +43,20 @@ public final class HildrModelLoader {
         Document doc = db.parse(new ByteArrayInputStream(modelXml.getBytes(StandardCharsets.UTF_8)));
         Element root = doc.getDocumentElement();
 
-        if (HildrBoomiXmlProfileModelReader.canRead(doc)) {
-            HildrModel model = HildrBoomiXmlProfileModelReader.read(doc, logPackage);
-            logPackage.trace("Model loaded: format=boomiXmlProfile, root=" + model.getRootName()
-                    + ", topLevelNodes=" + model.getTopLevelNodes().size());
-            return model;
-        }
-
-        HildrModel model = new HildrModel();
-        model.setRootName(logicalName(root));
-
-        for (Node child = root.getFirstChild(); child != null; child = child.getNextSibling()) {
-            if (child instanceof Element) {
-                model.getTopLevelNodes().add(readNode((Element) child));
+        for (HildrModelReader reader : READERS) {
+            if (reader.canRead(doc)) {
+                HildrModel model = reader.read(doc, logPackage);
+                if (logPackage != null) {
+                    logPackage.trace("Model loaded: format=" + reader.formatName()
+                            + ", sourceRoot=" + logicalName(root)
+                            + ", runtimeRoot=" + model.getRootName()
+                            + ", topLevelNodes=" + model.getTopLevelNodes().size());
+                }
+                return model;
             }
         }
 
-        logPackage.trace("Model loaded: format=jeraSeidr, root=" + model.getRootName()
-                + ", topLevelNodes=" + model.getTopLevelNodes().size());
-
-        return model;
-    }
-
-    private static HildrModelNode readNode(Element element) {
-        HildrModelNode node = new HildrModelNode();
-        node.setNodeType(logicalName(element));
-        node.setId(element.getAttribute("id"));
-        node.setDescription(element.getAttribute("ds"));
-        node.setOccurs(element.getAttribute("oc"));
-        node.setLength(element.getAttribute("ln"));
-        node.setRecognitionCode(element.getAttribute("rc"));
-
-        int ordinal = 0;
-        for (Node child = element.getFirstChild(); child != null; child = child.getNextSibling()) {
-            if (child instanceof Element) {
-                HildrModelNode childNode = readNode((Element) child);
-                childNode.setOrdinal(ordinal++);
-                node.getChildren().add(childNode);
-            }
-        }
-
-        return node;
+        throw new IllegalStateException("Unsupported Hildr model source format: root=" + logicalName(root));
     }
 
     private static String logicalName(Element element) {
