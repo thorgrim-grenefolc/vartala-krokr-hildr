@@ -1,0 +1,89 @@
+apply plugin: 'java'
+
+group = 'com.grenefolc'
+version = '1.0.0'
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+repositories {
+    mavenCentral()
+    maven {
+        name = "Connector SDK Repository"
+        url = "https://boomisdk.s3.amazonaws.com/releases"
+    }
+}
+
+dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'com.boomi.connsdk:connector-sdk-api:2.29.1'
+    implementation 'com.boomi.connsdk:connector-sdk-util:2.29.1'
+    implementation 'com.boomi.connsdk:connector-sdk-model:2.29.1'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+jar {
+    baseName = 'hildr-connector'
+}
+
+def stagingDir = file("$buildDir/boomiPackage")
+
+task cleanConnectorPackage(type: Delete) {
+    delete stagingDir
+}
+
+task stageConnector(type: Copy, dependsOn: [cleanConnectorPackage, jar]) {
+    into stagingDir
+
+    from('src/main/resources/META-INF') {
+        into 'META-INF'
+        include 'connector-descriptor.xml'
+        include 'connector-config.xml'
+    }
+
+    from(jar.archivePath) {
+        into 'lib'
+        rename { 'hildr-connector.jar' }
+    }
+
+    from(configurations.runtimeClasspath) {
+        into 'lib'
+        include 'jackson-databind-*.jar'
+        include 'jackson-core-*.jar'
+        include 'jackson-annotations-*.jar'
+        include 'connector-sdk-api-*.jar'
+        include 'connector-sdk-util-*.jar'
+        include 'connector-sdk-model-*.jar'
+    }
+}
+
+task listConnectorPackage(dependsOn: stageConnector) {
+    doLast {
+        println ''
+        println 'Connector package contents:'
+        file(stagingDir).eachFile { f ->
+            println " - ${f.name}"
+        }
+        println ''
+    }
+}
+
+task packageConnector(type: Zip, dependsOn: stageConnector) {
+    baseName = 'hildr-connector'
+    version = project.version
+    destinationDir = file("$buildDir/distributions")
+
+    from(stagingDir)
+}
+
+task copyBoomiMetaToDist(type: Copy, dependsOn: packageConnector) {
+    from('src/main/resources/META-INF') {
+        include 'connector-descriptor.xml'
+    }
+    into("$buildDir/distributions")
+}
+
+packageConnector.finalizedBy(copyBoomiMetaToDist)

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenericConnectorDescriptor browsingType="cloud" requireConnectionForBrowse="false">
+    <description>Hildr connector for parsing EDI-style payloads into Grenefolc Vartala canonical XML.</description>
+
+    <operation types="EXECUTE">
+        <field id="cliJson" label="CLI Json" type="string" overrideable="true">
+            <helpText>Process and parser behaviour switches only, for example { &quot;cli&quot;: { &quot;showProcessTrace&quot;: false, &quot;presentationClass&quot;: &quot;&quot;, &quot;synonymStyle&quot;: &quot;id&quot;, &quot;maxOccurs&quot;: &quot;none&quot;, &quot;envelopeFilter&quot;: false } }.</helpText>
+        </field>
+
+        <field id="recogJson" label="Recognition Json" type="string" overrideable="true">
+            <helpText>Optional recognition, routing, presentation, delimiter, and envelope override JSON. This is merged with Hildr's default recognition specification.</helpText>
+        </field>
+
+        <field id="modelXml" label="Model Xml" type="string" overrideable="true">
+            <helpText>Optional model XML fallback. A document dynamic property named ddp_hildr_modelXml takes precedence when supplied.</helpText>
+        </field>
+    </operation>
+
+    <dynamicProperty id="CliJson" label="CLI Json" type="string"/>
+    <dynamicProperty id="RecogJson" label="Recognition Json" type="string"/>
+    <dynamicProperty id="ModelXml" label="Model Xml" type="string"/>
+    <trackedProperty id="hildrLog" label="Hildr Log"/>
+</GenericConnectorDescriptor>

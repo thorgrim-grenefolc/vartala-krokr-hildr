@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenericConnector sdkApiVersion="2.29.1">
+    <connectorClassName>com.grenefolc.hildr.HildrConnector</connectorClassName>
+</GenericConnector>
