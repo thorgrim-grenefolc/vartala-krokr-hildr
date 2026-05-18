@@ -104,6 +104,10 @@ final class HildrBoomiEdiProfileModelReader implements HildrModelReader {
         node.setRecognitionCode(firstNonBlank(segment.getAttribute("name"), node.getId()));
 
         int ordinal = 0;
+        HildrModelNode sdidNode = createSyntheticSegmentIdentifierNode(node.getId(), node.getRecognitionCode());
+        sdidNode.setOrdinal(ordinal++);
+        node.getChildren().add(sdidNode);
+
         HildrModelNode currentComposite = null;
 
         for (Node child = segment.getFirstChild(); child != null; child = child.getNextSibling()) {
@@ -129,6 +133,21 @@ final class HildrBoomiEdiProfileModelReader implements HildrModelReader {
             }
         }
 
+        return node;
+    }
+
+    private static HildrModelNode createSyntheticSegmentIdentifierNode(String segmentId, String recognitionCode) {
+        String id = firstNonBlank(segmentId, recognitionCode, "Segment") + "_SDID";
+        String rc = firstNonBlank(recognitionCode, segmentId);
+        String length = String.valueOf(rc.length() > 0 ? rc.length() : 1);
+
+        HildrModelNode node = new HildrModelNode();
+        node.setNodeType("ed");
+        node.setId(id);
+        node.setDescription("Segment identifier");
+        node.setOccurs("1");
+        node.setLength(length);
+        node.setRecognitionCode(rc);
         return node;
     }
 
